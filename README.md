@@ -28,7 +28,9 @@ This repository contains both:
 - **CloudWatch Logs** – application logging
 - **IAM** – task execution & logging permissions
 - **Terraform** – Infrastructure as Code
-
+  
+### Project Structure
+```
 .
 ├── src/ # Telegram bot source code
 ├── infra/ # Terraform infrastructure
@@ -42,7 +44,7 @@ This repository contains both:
 ├── .env.example
 ├── .gitignore
 └── README.md
-
+```
 ---
 
 ## 🛠 Infrastructure (Terraform)
@@ -100,6 +102,8 @@ aws ecs list-tasks \
 aws logs tail /ecs/pillsale-bot --follow
 ```
 
+<img width="1890" height="879" alt="Screenshot (59)" src="https://github.com/user-attachments/assets/69c7e640-9a92-4ba6-9019-ea8bf2475647" />
+
 If logs show polling and Telegram startup messages → ✅ bot is live.
 
 ### How to Test
@@ -150,14 +154,9 @@ MIT
 - Shows **production verification**
 - Gives **proper credit**
 - Makes you look like a **DevOps engineer**, not just a bot runner
-
+```
 ---
 
-## Next steps (optional but powerful)
+<img width="1536" height="1024" alt="ChatGPT Image Jan 25, 2026, 11_09_02 AM" src="https://github.com/user-attachments/assets/52e77846-196d-442d-9daa-459dcb3e4fa7" />
 
-I can help you:
-1. Add **architecture diagram**
-2. Add **CI/CD with GitHub Actions**
-3. Clean up ECS service naming
-4. Convert this into a **portfolio case study**
-```
+
