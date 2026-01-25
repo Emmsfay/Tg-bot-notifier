@@ -1,291 +1,163 @@
-# Pillsale Monitor Bot
+# Pillsale Monitor Bot (AWS ECS Deployment)
 
-A Telegram bot that monitors [pillsale.fun](https://www.pillsale.fun/) and notifies subscribers when the site goes live.
+A production-ready Telegram bot that monitors **pillsale.fun** and notifies subscribers when the site goes live.
 
-## Features
+This repository contains both:
 
-- 🤖 Telegram bot with multi-user subscription support
-- 🔍 Checks the website every 5 minutes
-- 📢 Notifies all subscribers when "Coming Soon" disappears
-- 💾 Persistent storage using JSON files
-- 🛡️ Robust error handling and automatic retry logic
-- 📊 Comprehensive logging
+- The **application code** (originally by Rehk Mansa)
+- A **full AWS ECS + Terraform infrastructure** built and deployed by **Emmanuel Chukwudi**
 
-## Prerequisites
+---
 
-- [Bun](https://bun.sh/) installed on your system
-- A Telegram account
-- pnpm (recommended) or npm
+## 🚀 What This Project Does
 
-## Setup Instructions
+- Monitors https://www.pillsale.fun every 5 minutes
+- Detects when the "Coming Soon" text disappears
+- Notifies all subscribed Telegram users instantly
+- Runs **24/7 on AWS ECS (Fargate)**
 
-### 1. Create a Telegram Bot
+---
 
-1. Open Telegram and search for [@BotFather](https://t.me/botfather)
-2. Send `/newbot` command
-3. Follow the prompts:
-   - Choose a name for your bot (e.g., "Pillsale Monitor")
-   - Choose a username (must end in 'bot', e.g., "pillsale_monitor_bot")
-4. BotFather will provide a token that looks like: `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`
-5. Save this token - you'll need it in the next step
+## 🧱 Architecture Overview
 
-### 2. Install Dependencies
+**AWS Services Used**
+
+- **ECS (Fargate)** – runs the bot container
+- **ECR** – stores the Docker image
+- **VPC** – private networking
+- **CloudWatch Logs** – application logging
+- **IAM** – task execution & logging permissions
+- **Terraform** – Infrastructure as Code
+
+.
+├── src/ # Telegram bot source code
+├── infra/ # Terraform infrastructure
+│ ├── ecs.tf
+│ ├── ecr.tf
+│ ├── iam.tf
+│ ├── vpc.tf
+│ ├── variables.tf
+│ └── outputs.tf
+├── Dockerfile
+├── .env.example
+├── .gitignore
+└── README.md
+
+---
+
+## 🛠 Infrastructure (Terraform)
+
+All AWS resources are provisioned using Terraform.
+
+### Create Infrastructure
 
 ```bash
-cd /Users/macbookpro/Documents/code/personal/pillsale
-pnpm install
+cd infra
+terraform init
+terraform plan
+terraform apply
 ```
 
-### 3. Configure Environment Variables
+This creates:
 
-```bash
-cp .env.example .env
+- ECS cluster
+- ECS task definition
+- ECS service
+- ECR repository
+- CloudWatch log group
+- IAM roles
+- VPC + subnets
+
+### 🐳 Container Build & Push (ECR)
+
+```
+aws ecr get-login-password --region us-east-1 \
+ | docker login --username AWS --password-stdin <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com
+
+docker build -t pillsale-bot .
+docker tag pillsale-bot:latest <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/pillsale-bot:latest
+docker push <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/pillsale-bot:latest
 ```
 
-Edit `.env` and add your bot token:
+Verifying the Bot Is Running
+Check ECS Service
 
-```bash
-TELEGRAM_BOT_TOKEN=your_bot_token_here
+```
+aws ecs list-services --cluster infinite_loop-cluster
+```
+
+### Check Running Tasks
+
+```
+aws ecs list-tasks \
+  --cluster infinite_loop-cluster \
+  --service-name app-test-service-g6kdm271
+```
+
+### View Logs
+
+```
+aws logs tail /ecs/pillsale-bot --follow
+```
+
+If logs show polling and Telegram startup messages → ✅ bot is live.
+
+### How to Test
+
+```
+Open the bot on Telegram
+Send /start
+Send /notify
+```
+
+Wait for site status change (or simulate locally)
+
+```
+🔐 Environment Variables
+TELEGRAM_BOT_TOKEN=xxxx
 TARGET_URL=https://www.pillsale.fun/
 MONITOR_TEXT=Coming Soon
 CHECK_INTERVAL_MS=300000
-DATA_DIR=./data
 ```
 
-### 4. Run the Bot
+### Key DevOps Lessons Demonstrated
 
-**Development mode (with auto-reload):**
-```bash
-pnpm dev
-```
+- ECS Fargate production deployment
+- Terraform state & modular infra
+- Container image lifecycle (build → push → deploy)
+- CloudWatch log debugging
+- IAM least-privilege roles
+- Git hygiene (.terraform excluded)
 
-**Production mode:**
-```bash
-pnpm start
-```
+### Credits
 
-You should see output like:
-```
-[2026-01-03T21:30:00.000Z] [INFO] Starting Pillsale Monitor Bot...
-[2026-01-03T21:30:00.100Z] [INFO] Target URL: https://www.pillsale.fun/
-[2026-01-03T21:30:00.150Z] [INFO] ✅ Bot started and listening for commands
-[2026-01-03T21:30:00.200Z] [INFO] Scheduler started, checking every 300000ms
-```
+Original application code:
+Rehk Mansa – Telegram Pillsale Monitor Bot
 
-## Using the Bot
+AWS Infrastructure, Deployment & DevOps:
+Emmanuel Chukwudi
 
-### User Commands
-
-Once the bot is running, users can interact with it on Telegram:
-
-- `/start` - See welcome message and instructions
-- `/notify` - Subscribe to notifications
-- `/stop` - Unsubscribe from notifications
-
-### Example Interaction
-
-```
-User: /start
-Bot: 🎉 Welcome to Pillsale Launch Monitor!
-
-     I'll notify you the moment pillsale.fun goes live.
-
-     Commands:
-     /notify - Get notified when the site launches
-     /stop - Stop receiving notifications
-
-     The site is currently showing "Coming Soon" - I'm checking every 5 minutes!
-
-User: /notify
-Bot: ✅ You're subscribed! I'll notify you when pillsale.fun launches.
-```
-
-When the site goes live, all subscribers receive:
-
-```
-🚀 PILLSALE IS LIVE! 🚀
-
-The site has launched! Check it out now:
-https://www.pillsale.fun/
-
-Good luck! 🎊
-```
-
-## Project Structure
-
-```
-pillsale/
-├── src/
-│   ├── index.ts              # Main application entry point
-│   ├── bot/
-│   │   ├── commands.ts       # Command handlers (/start, /notify, /stop)
-│   │   └── messages.ts       # Message templates
-│   ├── monitor/
-│   │   ├── checker.ts        # Website status checking
-│   │   └── scheduler.ts      # Periodic monitoring and notifications
-│   ├── storage/
-│   │   └── file-store.ts     # JSON file operations for subscribers
-│   ├── utils/
-│   │   ├── config.ts         # Environment variable validation
-│   │   └── logger.ts         # Logging utility
-│   └── types/
-│       └── index.ts          # TypeScript type definitions
-├── data/
-│   └── subscribers.json      # Persisted subscriber data (auto-created)
-├── .env                      # Your configuration (git-ignored)
-├── .env.example              # Configuration template
-├── package.json
-├── tsconfig.json
-└── README.md
-```
-
-## Configuration
-
-All configuration is done via environment variables in the `.env` file:
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `TELEGRAM_BOT_TOKEN` | Your Telegram bot token from @BotFather | *Required* |
-| `TARGET_URL` | Website to monitor | `https://www.pillsale.fun/` |
-| `MONITOR_TEXT` | Text to check for (site is "coming soon" when present) | `Coming Soon` |
-| `CHECK_INTERVAL_MS` | How often to check the website (in milliseconds) | `300000` (5 minutes) |
-| `DATA_DIR` | Directory for storing subscriber data | `./data` |
-| `LOG_TO_FILE` | Enable file logging | `false` |
-| `LOG_DIR` | Directory for log files | `./logs` |
-
-## How It Works
-
-1. **Bot Startup**: Initializes storage, starts Telegram bot, begins monitoring
-2. **User Subscription**: Users send `/notify` to subscribe; their chat ID is saved to `data/subscribers.json`
-3. **Periodic Checks**: Every 5 minutes, the bot:
-   - Fetches the website HTML
-   - Checks if "Coming Soon" text is present
-   - Updates the last checked timestamp
-4. **Notification**: When "Coming Soon" disappears:
-   - Sends notification to all subscribers
-   - Marks as notified (prevents duplicate notifications)
-   - Removes failed deliveries (blocked users)
-
-## Data Storage
-
-Subscriber data is stored in `data/subscribers.json`:
-
-```json
-{
-  "subscribers": [123456789, 987654321],
-  "metadata": {
-    "lastModified": "2026-01-03T21:30:00.000Z",
-    "totalSubscribers": 2
-  },
-  "state": {
-    "isLive": false,
-    "notificationSent": false,
-    "lastChecked": "2026-01-03T21:25:00.000Z"
-  }
-}
-```
-
-The file is automatically backed up on each write to `subscribers.json.bak`.
-
-## Error Handling
-
-The bot handles various error scenarios gracefully:
-
-- **Website Down**: Treats as "still coming soon", continues checking
-- **Network Errors**: Logs warning and retries on next interval
-- **Blocked Users**: Automatically removes from subscriber list
-- **Telegram Rate Limits**: 50ms delay between messages
-- **File Corruption**: Falls back to backup file
-
-## Deployment
-
-### Running on a Server
-
-1. Install Bun on your server
-2. Clone the repository
-3. Set up `.env` with your bot token
-4. Use a process manager like PM2:
-
-```bash
-pnpm add -g pm2
-pm2 start "bun run src/index.ts" --name pillsale-bot
-pm2 save
-pm2 startup
-```
-
-### Using Docker (Optional)
-
-Create a `Dockerfile`:
-
-```dockerfile
-FROM oven/bun:1
-WORKDIR /app
-COPY package.json bun.lockb ./
-RUN bun install
-COPY . .
-CMD ["bun", "run", "src/index.ts"]
-```
-
-Build and run:
-
-```bash
-docker build -t pillsale-bot .
-docker run -d --env-file .env --name pillsale-bot pillsale-bot
-```
-
-## Development
-
-```bash
-# Install dependencies
-pnpm install
-
-# Run in development mode with auto-reload
-pnpm dev
-
-# Type check
-pnpm run type-check
-
-# Build for production
-pnpm build
-```
-
-## Troubleshooting
-
-### Bot doesn't respond to commands
-
-- Verify `TELEGRAM_BOT_TOKEN` is correct in `.env`
-- Check that the bot is running (no errors in console)
-- Make sure you're using the correct bot username
-
-### Website checks aren't working
-
-- Verify `TARGET_URL` is accessible
-- Check the logs for error messages
-- Test the URL manually in a browser
-
-### Notifications not sent
-
-- Check `data/subscribers.json` has subscribers
-- Verify `state.notificationSent` is `false`
-- Check logs for error messages
-
-### How to reset after testing
-
-Edit `data/subscribers.json` and set:
-```json
-{
-  "state": {
-    "isLive": false,
-    "notificationSent": false,
-    "lastChecked": "2026-01-03T21:25:00.000Z"
-  }
-}
-```
-
-## License
-
+###📜 License
 MIT
 
-## Support
+```
+---
 
-For issues and questions, please open an issue on GitHub.
+## Why this README is 🔥 for recruiters
+
+- Shows **real AWS usage**
+- Shows **Terraform**
+- Shows **production verification**
+- Gives **proper credit**
+- Makes you look like a **DevOps engineer**, not just a bot runner
+
+---
+
+## Next steps (optional but powerful)
+
+I can help you:
+1. Add **architecture diagram**
+2. Add **CI/CD with GitHub Actions**
+3. Clean up ECS service naming
+4. Convert this into a **portfolio case study**
+```
