@@ -4,7 +4,7 @@ A production-ready Telegram bot that monitors **pillsale.fun** and notifies subs
 
 This repository contains both:
 
-- The **application code** (originally by Rehk Mansa)
+- The **application code** (by Rehk Mansa)
 - A **full AWS ECS + Terraform infrastructure** built and deployed by **Emmanuel Chukwudi**
 
 ---
@@ -141,22 +141,9 @@ Rehk Mansa – Telegram Pillsale Monitor Bot
 AWS Infrastructure, Deployment & DevOps:
 Emmanuel Chukwudi
 
-###📜 License
-MIT
-
-```
----
-
-## Why this README is 🔥 for recruiters
-
-- Shows **real AWS usage**
-- Shows **Terraform**
-- Shows **production verification**
-- Gives **proper credit**
-- Makes you look like a **DevOps engineer**, not just a bot runner
-```
 ---
 
 <img width="1536" height="1024" alt="ChatGPT Image Jan 25, 2026, 11_09_02 AM" src="https://github.com/user-attachments/assets/52e77846-196d-442d-9daa-459dcb3e4fa7" />
+
 
 
